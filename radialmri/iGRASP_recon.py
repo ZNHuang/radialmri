@@ -1,5 +1,4 @@
 import sys
-#sys.path.append('/gpfs/home/zh1115/myfunctions/')
 import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -7,32 +6,7 @@ from scipy.io import loadmat
 from simulation_and_reconstruction import *
 #from mrishow import *
 import argparse
-
-#TODO delete
-def loss_hist(x_reconstructed, target_recombine):
-    loss = []
-    l = torch.nn.MSELoss()
-
-    for i in x_reconstructed[2]:
-        pred = numpy2torch(i, device).to(target_recombine.dtype)
-
-        loss.append(l(pred/torch.max(pred), \
-                target_recombine/torch.max(target_recombine)).\
-                cpu().numpy())
-    return loss
-
-#TODO delete
-def RMSE_hist(x_reconstructed, target_recombine):
-    loss = []
-    target = np.abs(target_recombine[:,0]+1j*target_recombine[:,1])
-
-    for i in x_reconstructed[2]:
-        pred = np.abs(i[:,0]+1j*i[:,1])
-        #print(target.shape)
-        loss.append(np.mean(((pred/pred.max()- target/target.max())**2).\
-                flatten())**0.5)
-
-    return loss
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 def main():
     #---input---

@@ -18,8 +18,8 @@ from utils import math
 from utils import cg
 
 dtype = torch.float
-#device = torch.device('cuda')
-device = torch.device('cpu')
+device = torch.device('cuda')
+#device = torch.device('cpu')
 
 def numpy2torch(x, device=torch.device('cpu')):
     """
@@ -751,7 +751,6 @@ class RadialModel_IC(torch.nn.Module):
             TV_loss = TV_loss+lambda2*torch.sqrt(sloss).sum()
         #print('TV_loss=', TV_loss)
         return TV_loss;
-
 
 def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                             grid_size, im_size,  tolerance = 0.001,

@@ -1,0 +1,13 @@
+logs*
+viz/
+slurm*
+scratch*ipynb
+historical/
+sample/
+*mkv
+test_2.jpynb
+*gif
+*pt
+*mat
+__pycache__
+.ipynb_checkpoints
