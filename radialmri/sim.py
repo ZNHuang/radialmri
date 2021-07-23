@@ -151,10 +151,10 @@ def main():
                 'nl': nl
             })
 
-        target_gifname = '{}/target_case{}_cs{}_Recon_iGRASP.gif'.format(savedir, caseidx, csidx)
+        target_gifname = '{}/target_case{}_cs{}.gif'.format(savedir, caseidx, csidx)
         save_gif(simulated_target, target_gifname)
 
-        target2_gifname = '{}/targetrecombine_case{}_cs{}_Recon_iGRASP.gif'.format(savedir, caseidx, csidx)
+        target2_gifname = '{}/targetrecombine_case{}_cs{}.gif'.format(savedir, caseidx, csidx)
         save_gif(target_recombine, target2_gifname)
         return
 
