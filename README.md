@@ -39,7 +39,7 @@ If running into problem about environment set-up. Contact author for assistant. 
 
 ## Switch Between GPU and CPU Computing
 
-This package can be used with or without GPU. GPU computing is faster but can't handle larget image samples. In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py) file, switch between annotation status of line 21 and line 22 allow you to switch between GPU and CPU computing. 
+This package can be used with or without GPU. GPU computing is faster but CPU can handle larger image samples. In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py) file, switch between annotation status of line 21 and line 22 allow you to switch between GPU and CPU computing. 
 
 ## Detailed Usage
 
