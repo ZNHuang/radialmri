@@ -18,8 +18,8 @@ from utils import math
 from utils import cg
 
 dtype = torch.float
-#device = torch.device('cuda')
-device = torch.device('cpu')
+device = torch.device('cuda')
+#device = torch.device('cpu')
 
 def numpy2torch(x, device=torch.device('cpu')):
     """
@@ -519,7 +519,7 @@ class CartesianModel(torch.nn.Module):
         """
         print('y.shape', y.shape)
         cimage = torch.ifft(y, signal_ndim=2, normalized=True)
-        print('cimage, coil_sensitivities.shape', cimage.shape, cimage.dtype, cimage.device, coil_sensitivities.shape, coil_sensitivities.dtype, coil_sensitivities.device)
+        #print('cimage, coil_sensitivities.shape', cimage.shape, cimage.dtype, cimage.device, coil_sensitivities.shape, coil_sensitivities.dtype, coil_sensitivities.device)
         cimage = cimage.permute(0, 1, 4, 2, 3)
         image = torch.sum(math.conj_complex_mult(cimage.to(coil_sensitivities.device), coil_sensitivities, dim=2), dim=0, keepdim=True);
         return image
@@ -821,26 +821,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 #x0 = x0 - stepsize[i]*model.adjoint(residual*torch.sqrt(w), traj, coil_sensitivities, w)
                 x0 = x0 - stepsize[i]*model.adjoint(residual, traj, coil_sensitivities, w)
                 history.append(x0.detach().cpu().numpy())
-    elif optimizer == 'CG1':
-
-        raise NotImplementedError
-        with torch.no_grad():
-            for i in range(niter):
-                if i == 0:
-                    output = model.forward(x0, traj, coil_sensitivities, w)
-                    residual = (output - kspace)
-                    gk = model.adjoint(residual*torch.sqrt(w), traj, coil_sensitivities, w)
-                    dk = -gk
-                else:
-                    gk = model.adjoint(residual*torch.sqrt(w), traj, coil_sensitivities, w)
-                    betak = torch.norm(gk)/torch.norm(gk_1)
-                    dk = betak*dk -gk
-
-                #Alpha0 =#TODO linear search
-
-                gk_1 = gk.detach()
     elif optimizer == 'CG2':
-        #Florian's implementation in Compressed Sensing tutorial
+        #Based on Florian Knoll's implementation in Compressed Sensing tutorial
         #x0#image domain
         x0 = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
         r = x0.detach().clone()#image domain
@@ -850,7 +832,7 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
         with torch.no_grad():
             for i in range(niter):
                 temp = model.forward(p, traj, coil_sensitivities, w)
-                Ap = model.adjoint(temp, traj, coil_sensitivities, w) #M in Florian's code, no regularization
+                Ap = model.adjoint(temp, traj, coil_sensitivities, w)
                 #print(p.shape, Ap.shape)
                 a = rr/(math.complex_mult(p, Ap, dim=1).sum())#step size
                 print(i, a)
@@ -863,79 +845,6 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 #real_residual = model.forward(x0, traj, coil_sensitivities, w)
                 #print(i, 'Real Residual l2 norm'.format())
                 print(i, 'Residual l2 norm ={:f}'.format(rr))
-    elif optimizer == 'CG3':
-        #Pre
-        a = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
-        b = torch.zeros(x0.shape).to(device)
-        #b = a.detach().clone()
-        beta_repeat = torch.ones(x0.shape).to(device)
-        p = a.detach().clone()
-        r = a.detach().clone()
-        with torch.no_grad():
-            for i in range(niter):
-                rHr = torch.norm(r)**2
-                aHa = torch.norm(a)**2
-                delta = rHr/aHa
-                print('delta: ', delta)
-                #print('Residual l2 norm', rHr)
-
-                Ep = model.forward(p, traj, coil_sensitivities, w)
-                q = model.adjoint(Ep, traj, coil_sensitivities, w) # E^H E p
-
-                pHq = torch.sum(math.conj_complex_mult(q, p, dim=1), dim =(0, 2, 3))
-                pHqconj = pHq.detach().clone()
-                pHqconj[1] = -pHqconj[1]
-                #print(pHq, pHqconj)
-                oneoverpHp = pHqconj/(torch.norm(pHq)**2)
-                #print('phq.shape', pHq.shape)
-                #print('oneoverpHp.shape', oneoverpHp.shape)
-                beta = rHr*oneoverpHp
-                #print(beta.shape, beta_repeat.shape)
-                beta_repeat[:, 0] = beta_repeat[:, 0]*beta[0]
-                beta_repeat[:, 1] = beta_repeat[:, 0]*beta[1]
-                b = b + math.complex_mult(beta_repeat, p, dim=1)
-                r_new = r -  math.complex_mult(beta_repeat, q, dim=1)
-                p = r_new + ((torch.norm(r_new)/torch.norm(r))**2)* p
-                r = r_new
-        x0 = b
-    elif optimizer == 'CG4':
-        #Pre
-        a = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
-        b = torch.zeros(x0.shape).to(device)
-        #b = a.detach().clone()
-        beta_repeat = torch.ones(x0.shape).to(device)
-        p = a.detach().clone()
-        r = a.detach().clone()
-        with torch.no_grad():
-            for i in range(niter):
-                if i%10 == 0:
-                    p = b.detach().clone()
-                    r = b.detach().clone()
-                rHr = torch.norm(r)**2
-                aHa = torch.norm(a)**2
-                delta = rHr/aHa
-                print('delta: ', delta)
-                #print('Residual l2 norm', rHr)
-
-                Ep = model.forward(p, traj, coil_sensitivities, w)
-                q = model.adjoint(Ep, traj, coil_sensitivities, w) # q =E^H E p
-
-                pHq = torch.sum(math.conj_complex_mult(q, p, dim=1), dim =(0, 2, 3))
-                pHqconj = pHq.detach().clone()
-                pHqconj[1] = -pHqconj[1]
-                #print(pHq, pHqconj)
-                oneoverpHp = pHqconj/(torch.norm(pHq)**2)
-                #print('phq.shape', pHq.shape)
-                #print('oneoverpHp.shape', oneoverpHp.shape)
-                beta = rHr*oneoverpHp
-                #print(beta.shape, beta_repeat.shape)
-                beta_repeat[:, 0] = beta_repeat[:, 0]*beta[0]
-                beta_repeat[:, 1] = beta_repeat[:, 0]*beta[1]
-                b = b + math.complex_mult(beta_repeat, p, dim=1)
-                r_new = r -  math.complex_mult(beta_repeat, q, dim=1)
-                p = r_new + ((torch.norm(r_new)/torch.norm(r))**2)* p
-                r = r_new
-        x0 = b
     elif optimizer == 'CG5':
         EH_b = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
         x0 = torch.zeros(EH_b.shape).to(device)
@@ -967,6 +876,7 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 history.append(x0.detach().cpu().numpy())
     else:
         print('optimizer is not defined:', optimizer)
+        print('Please only use CG2, CG5 or GD as input for optimizer')
         raise NotImplementedError
 
 
