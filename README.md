@@ -1,4 +1,4 @@
-# Radial MRI $k$-space Simulation and Reconstruction
+# Radial MR <i>k</i>-space Simulation and Image Reconstruction
 
 This repository/package simulate radial kspace from a series of MR images. By 
 using GPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
@@ -12,19 +12,13 @@ for machine learning application. You may also use the code just for
 
 The code written in this repository/package requires:
 
-| First Header  | Second Header |
-| ------------- | ------------- |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
-
-
 | Tool    | Version     |
 | ------- | ----------- |
 |Python   | **3.6.8**   |
 |torch    | **1.1.0**   |
 |torchkbnufft| **0.2.1**|
 
-The specific version are very important.(Other Python3 versions might be OK) Later version of the software are tested, and will result in either GPU memory inefficiency or complete failure of running the code. 
+The specific version are very important. Later version of the torch and torchkbnufft are tested (Other Python3 versions might be OK), and will result in either GPU memory inefficiency or complete failure of running the code. 
 
 To verify the version of the python, in shell type 
 
