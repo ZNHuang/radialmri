@@ -12,11 +12,17 @@ for machine learning application. You may also use the code just for
 
 The code written in this repository/package requires:
 
+| First Header  | Second Header |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
+
 |Tool     |Version      |
 | ------- | ----------- |
 |Python   | **3.6.8**   |
 | ------- | ----------- |
-|torch    |**1.1.0**    |
+|torch    | **1.1.0**   |
 | ------- | ----------- |
 |torchkbnufft| **0.2.1**|
 
