@@ -13,11 +13,11 @@ for machine learning application. You may also use the code just for
 The code written in this repository/package requires:
 
 |Tool     |Version      |
-|-----------------------|
+|---------|-------------|
 |Python   | **3.6.8**   |
-|-----------------------|
+|---------|-------------|
 |torch    |**1.1.0**    |
-|-----------------------|
+|---------|-------------|
 |torchkbnufft| **0.2.1**|
 
 The specific version are very important. Later version of the software are tested, and will result in either GPU memory inefficiency or complete failure of running the code. 
