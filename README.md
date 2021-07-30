@@ -1,6 +1,10 @@
-# Radial MRI Kspace Simulation
+# Radial MRI $k$-space Simulation and Reconstruction
 
-This repository/package simulate radial kspace from a series of MR images.
+This repository/package simulate radial kspace from a series of MR images. By 
+using GPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
+are able to make the simulation and reconstruct faster, therefore suitable 
+for machine learing application. You may also use the code just for 
+[iGRASP]() or [CG-SENSE]() reconstruction.
 
 ![Diagram](/fig1b.png)
 
@@ -33,12 +37,14 @@ To Install the package with a specific version: pip install 'PackageName==1.1.0'
 
 If running into problem about environment set-up. Contact author for assistant. A Singularity container is set up for this by the author to run these scripts. The author will be happy to share that container if it helps.
 
+
 ## Switch between GPU and CPU computing for simulation and (i)GRASP reconstruction
 
 In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py) file, switch between annotation status of line 21 and line 22.
+
 
 ## For Detailed Usage, please refer to the jupyter notebooks in the test folder
 
 ## Testing Data
 
-Due to patient data involved, I'm not able to push the exmaple testing data to the repository. I'm working on an example based on a short vedio for demonstration purpose.
+Due to patient data involved, I'm not able to push realistic example as testing data to the repository. In the test/ directory, there is an example based on a short vedio for demonstration purpose. Unrealistic coil sensitivites and phase were used for simplicity. This example will show how the package works from simulation to reconstruction.
