@@ -14,8 +14,8 @@ from torchkbnufft import KbNufft as TorchKbNufft
 from torchkbnufft import AdjKbNufft as TorchAdjKbNufft
 from torchkbnufft import MriSenseNufft, AdjMriSenseNufft
 
-from utils import math
-from utils import cg
+import complex_operations as cpo
+#from utils import cg
 
 dtype = torch.float
 device = torch.device('cuda')
@@ -338,7 +338,7 @@ def normalized_coilsmap(smap):
     """Normalized the coil sensitivities"""
     print(smap.shape)
     #calculated the modulus
-    temp = math.conj_complex_mult(smap, smap, dim=2)
+    temp = cpo.multiplication_conjugate(smap, smap, dim=2)
     modulus = torch.sum(temp, dim=1)
     #copy the real part to the imaginary,
     #for convenience during broadcasting
@@ -502,7 +502,7 @@ class CartesianModel(torch.nn.Module):
 
         cimage = torch.zeros(coil_sensitivities.shape, dtype=coil_sensitivities.dtype)
         for i in range(coil_sensitivities.shape[0]):
-            cimage[i] = math.complex_mult(x.squeeze(), coil_sensitivities[i], dim=1)
+            cimage[i] = cpo.multiplication(x.squeeze(), coil_sensitivities[i], dim=1)
 
         cimage = cimage.permute(0, 1, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (ncoil, nt, x, y, 2)
         y = torch.fft(cimage, signal_ndim=2, normalized=True)
@@ -521,7 +521,7 @@ class CartesianModel(torch.nn.Module):
         cimage = torch.ifft(y, signal_ndim=2, normalized=True)
         #print('cimage, coil_sensitivities.shape', cimage.shape, cimage.dtype, cimage.device, coil_sensitivities.shape, coil_sensitivities.dtype, coil_sensitivities.device)
         cimage = cimage.permute(0, 1, 4, 2, 3)
-        image = torch.sum(math.conj_complex_mult(cimage.to(coil_sensitivities.device), coil_sensitivities, dim=2), dim=0, keepdim=True);
+        image = torch.sum(cpo.multiplication_conjugate(cimage.to(coil_sensitivities.device), coil_sensitivities, dim=2), dim=0, keepdim=True);
         return image
 
     def tv_loss(self):
@@ -542,13 +542,13 @@ class CartesianModel2(torch.nn.Module):
     def forward(self, x):
         cimage = torch.zeros(self.coil_sensitivities.shape, dtype=self.coil_sensitivities.dtype)
         for i in range(self.coil_sensitivities.shape[0]):
-            cimage[i] = math.complex_mult(x.squeeze(), self.coil_sensitivities[i], dim=2)
+            cimage[i] = cpo.multiplication(x.squeeze(), self.coil_sensitivities[i], dim=2)
         y = torch.fft(cimage, signal_ndim=2, normalized=True)
         return y
 
     def backward(self, y):
         cimage = torch.ifft(y, signal_ndim=2, normalized=True)
-        image = torch.sum(math.conj_complex_mult(cimage, self.coil_sensitivities, dim=3), dim=0, keepdim=True)
+        image = torch.sum(cpo.multiplication_conjugate(cimage, self.coil_sensitivities, dim=3), dim=0, keepdim=True)
         return image
 
     def weight(self, y):
@@ -597,7 +597,7 @@ class RadialModel(torch.nn.Module):
             """
         #assert coil_sensitivities.shape[0] == 1
         #assert coil_sensitivities.shape[2] == 2
-        cimage = math.complex_mult(x.unsqueeze(1), coil_sensitivities, dim =2)
+        cimage = cpo.multiplication(x.unsqueeze(1), coil_sensitivities, dim =2)
         y = self.nufft_op(cimage, k)
         y = y* torch.sqrt(w)
         return y
@@ -613,7 +613,7 @@ class RadialModel(torch.nn.Module):
         """
         y = y* torch.sqrt(w)
         cimage = self.adjnufft_op(y, k)
-        x = math.conj_complex_mult(cimage, coil_sensitivities, dim = 2)
+        x = cpo.multiplication_conjugate(cimage, coil_sensitivities, dim = 2)
         x = x.sum(1)
         return x
 
@@ -685,8 +685,8 @@ class RadialModel_IC(torch.nn.Module):
         #assert coil_sensitivities.shape[0] == 1
         #assert coil_sensitivities.shape[2] == 2
         if self.IC:
-            x = math.complex_mult(x, I, dim =1)
-        cimage = math.complex_mult(x.unsqueeze(1), coil_sensitivities, dim =2)
+            x = cpo.multiplication(x, I, dim =1)
+        cimage = cpo.multiplication(x.unsqueeze(1), coil_sensitivities, dim =2)
         y = self.nufft_op(cimage, k)
         y = y* torch.sqrt(w)
         return y
@@ -711,10 +711,10 @@ class RadialModel_IC(torch.nn.Module):
         #y = y* torch.sqrt(w.view(w.shape[0], 1, 1, -1))
         y = y* torch.sqrt(w)
         cimage = self.adjnufft_op(y, k)
-        x = math.conj_complex_mult(cimage, coil_sensitivities, dim = 2)
+        x = cpo.multiplication_conjugate(cimage, coil_sensitivities, dim = 2)
         x = x.sum(1)
         if self.IC:
-            x = math.complex_mult(x, I, dim=1)
+            x = cpo.multiplication(x, I, dim=1)
         return x
 
     def adjoint_coilimage(self, y, k, w):
@@ -834,7 +834,7 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 temp = model.forward(p, traj, coil_sensitivities, w)
                 Ap = model.adjoint(temp, traj, coil_sensitivities, w)
                 #print(p.shape, Ap.shape)
-                a = rr/(math.complex_mult(p, Ap, dim=1).sum())#step size
+                a = rr/(cpo.multiplication(p, Ap, dim=1).sum())#step size
                 print(i, a)
                 x0 = x0 + a*p
                 rnew = r - a*Ap
@@ -856,7 +856,7 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 E_p = model.forward(p, traj, coil_sensitivities, w)
                 q = model.adjoint(E_p, traj, coil_sensitivities, w) # E^H E p
 
-                pHq = torch.sum(math.conj_complex_mult(q, p, dim=1), dim =(0, 2, 3))
+                pHq = torch.sum(cpo.multiplication_conjugate(q, p, dim=1), dim =(0, 2, 3))
                 pHqconj = pHq.detach().clone()
                 pHqconj[1] = -pHqconj[1]
                 #print(pHq, pHqconj)
@@ -868,8 +868,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 alpha_repeat = torch.ones(x0.shape).to(device)
                 alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
                 alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
-                x0 = x0 + math.complex_mult(alpha_repeat, p, dim=1)
-                r_new = r - math.complex_mult(alpha_repeat, q, dim=1)
+                x0 = x0 + cpo.multiplication(alpha_repeat, p, dim=1)
+                r_new = r - cpo.multiplication(alpha_repeat, q, dim=1)
                 beta = (torch.norm(r_new)/torch.norm(r))**2
                 p = r_new + beta*p
                 r = r_new
