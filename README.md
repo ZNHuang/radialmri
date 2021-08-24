@@ -4,7 +4,7 @@ This repository/package simulate radial kspace from a series of MR images. By
 using GPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
 are able to make the simulation and reconstruct faster, therefore suitable 
 for machine learning application. You may also use the code just for 
-[iGRASP](https://pubmed.ncbi.nlm.nih.gov/24142845/)(momentarily unavailable) or [CG-SENSE](https://onlinelibrary.wiley.com/doi/10.1002/mrm.1241) reconstructioni, Radial or Cartesian.
+[iGRASP](https://pubmed.ncbi.nlm.nih.gov/24142845/)(momentarily unavailable) or [CG-SENSE](https://onlinelibrary.wiley.com/doi/10.1002/mrm.1241) reconstruction, Radial or Cartesian.
 
 ![Diagram](/fig1b.png)
 
@@ -43,9 +43,10 @@ If running into problem about environment set-up. Contact author for assistant. 
 This package can be used with or without GPU. GPU computing is faster but CPU can handle larger image samples. In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py) file, switch between annotation status of line 21 and line 22 allow you to switch between GPU and CPU computing. 
 
 Similar operation should be done to switch for complex_operations.py
+
 ## Detailed Usage
 
-Please refer to the jupyter notebooks in the test folder. test.ipynb shows the basics and Example_Crane.ipynb shows the details. 
+Please refer to the jupyter notebooks in the test folder. test.ipynb shows the basics and [Example_Crane.ipynb](/tests/Example-Crane.ipynb) shows the details. 
 
 ## Testing Data
 
