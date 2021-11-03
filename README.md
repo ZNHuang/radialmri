@@ -2,8 +2,8 @@
 
 This repository/package simulate radial kspace from a series of MR images. By 
 using GPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
-are able to make the simulation and reconstruct faster, therefore suitable 
-for machine learning application. You may also use the code just for 
+are able to make the simulation and reconstruction faster, therefore suitable 
+for machine learning applications. You may also use the code just for 
 [iGRASP](https://pubmed.ncbi.nlm.nih.gov/24142845/)(momentarily unavailable) or [CG-SENSE](https://onlinelibrary.wiley.com/doi/10.1002/mrm.1241) reconstruction, Radial or Cartesian.
 
 ![Diagram](/fig1b.png)
@@ -40,9 +40,9 @@ If running into problem about environment set-up. Contact author for assistant. 
 
 ## Switch Between GPU and CPU Computing
 
-This package can be used with or without GPU. GPU computing is faster but CPU can handle larger image samples. In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py) file, switch between annotation status of line 21 and line 22 allow you to switch between GPU and CPU computing. 
+This package can be used with or without GPU. GPU computing is faster but CPU can handle larger image samples. In [radialmri/simulation_and_reconstruction.py](/radialmri/simulation_and_reconstruction.py#L21) file, switch between annotation status of line 21 and line 22 allow you to switch between GPU and CPU computing. 
 
-Similar operation should be done to switch for complex_operations.py
+Similar operation should be done to switch for [complex_operations.py](https://github.com/ZNHuang/radialmri/blob/main/radialmri/complex_operations.py#L3)
 
 ## Detailed Usage
 
@@ -62,5 +62,6 @@ Due to patient data involved, I'm not able to push realistic example as testing 
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/mmuckley/torchkbnufft}}
+  howpublished = {\url{https://github.com/mmuckley/torchkbnufft
+	}}
 }
