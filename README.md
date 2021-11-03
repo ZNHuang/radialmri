@@ -19,7 +19,7 @@ The code written in this repository/package requires:
 |torch    | **1.1.0**   |
 |torchkbnufft| **0.2.1**|
 
-The specific version are very important. Later version of the torch and torchkbnufft are tested (Other Python3 versions might be OK), and will result in either GPU memory inefficiency or complete failure of running the code. 
+The specific version are very important. Later version of the torch and torchkbnufft are tested (Other Python3 versions might be OK, for instance Python 3.8.3), and will result in either GPU memory inefficiency or complete failure of running the code. 
 
 To verify the version of the python, in shell type 
 
