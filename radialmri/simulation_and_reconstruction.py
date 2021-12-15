@@ -20,6 +20,7 @@ import complex_operations as cpo
 dtype = torch.float
 device = torch.device('cuda')
 #device = torch.device('cpu')
+warnings.warn('Out of sync with the remove repository')
 
 def numpy2torch(x, device=torch.device('cpu')):
     """
@@ -110,6 +111,38 @@ def density_compensation(total_spokes, spokes_per_frame, readout_length,
 
     if minimum == None:
         minimum = 1 / spokes_per_frame
+
+    res = torch.zeros(bsize, readout_length*total_spokes)
+
+    for i in range(int(readout_length/2)):
+        res[0, i] = (-(i-readout_length/2)*(1-minimum)*2/readout_length)+minimum
+
+    for i in range(int(readout_length/2), readout_length):
+        res[0, i] = ((i-readout_length/2)*(1-minimum)*2/readout_length)+minimum
+
+    for i in range(1, int(total_spokes)):
+        res[0,i*readout_length:(i+1)*readout_length] = res[0, :readout_length]
+
+    return res.to(device)
+
+def density_compensation_zerominimum(total_spokes, spokes_per_frame, readout_length,
+        device):
+    """
+    Calculate the density compensation matrix.
+
+    Keyword Arguments:
+
+    total_spokes -- total number spokes use to reconstruct
+    spokes_per_frame -- number of spokes to be used to reconstruct EACH
+        FRAME
+    readout_length -- size of each readout
+    device -- torch.device, torch.device('cpu') or torch.device('cuda')
+    minimum -- float, manually define the minimum in the density
+        compensation
+    """
+    bsize = 1
+
+    minimum = 0
 
     res = torch.zeros(bsize, readout_length*total_spokes)
 
@@ -500,11 +533,14 @@ class CartesianModel(torch.nn.Module):
             y: (ncoil, nt, x, y, 2)
         """
 
-        cimage = torch.zeros(coil_sensitivities.shape, dtype=coil_sensitivities.dtype)
-        for i in range(coil_sensitivities.shape[0]):
-            cimage[i] = cpo.multiplication(x.squeeze(), coil_sensitivities[i], dim=1)
+        #cimage = torch.zeros(coil_sensitivities.shape, dtype=coil_sensitivities.dtype)
+        #for i in range(coil_sensitivities.shape[0]):
+        #    cimage[i] = cpo.multiplication(x.squeeze(), coil_sensitivities[i], dim=2)
+            #Mon Dec 13 17:48:17 EST 2021
+        cimage = cpo.multiplication(x.unsqueeze(1), coil_sensitivities, dim =2)
 
-        cimage = cimage.permute(0, 1, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (ncoil, nt, x, y, 2)
+        #cimage = cimage.permute(0, 1, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (ncoil, nt, x, y, 2)
+        cimage = cimage.permute(1, 0, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (nt, ncoil, x, y, 2)
         y = torch.fft(cimage, signal_ndim=2, normalized=True)
         return y
 
@@ -517,12 +553,12 @@ class CartesianModel(torch.nn.Module):
         Returns:
             x, coil sensitivities combined image
         """
-        print('y.shape', y.shape)
+        #print('y.shape', y.shape)
         cimage = torch.ifft(y, signal_ndim=2, normalized=True)
         #print('cimage, coil_sensitivities.shape', cimage.shape, cimage.dtype, cimage.device, coil_sensitivities.shape, coil_sensitivities.dtype, coil_sensitivities.device)
-        cimage = cimage.permute(0, 1, 4, 2, 3)
-        image = torch.sum(cpo.multiplication_conjugate(cimage.to(coil_sensitivities.device), coil_sensitivities, dim=2), dim=0, keepdim=True);
-        return image
+        cimage = cimage.permute(1, 0, 4, 2, 3)
+        image = torch.sum(cpo.multiplication_conjugate(cimage.to(coil_sensitivities.device), coil_sensitivities, dim=2), dim=1, keepdim=True);
+        return image.squeeze()
 
     def tv_loss(self):
         raise NotImplementedError;
@@ -570,6 +606,108 @@ def CartesianSimulation(target, smap):
     print(recon_fromsim_fs.shape)
 
     return simulated_kspace_fs, recon_fromsim_fs
+
+def CartesianRecon(kspace, coil_sensitivities, w, tolerance = 0.001,
+                   lambda1 = None, lambda2 = None, device=device,
+                   dtype=dtype, keep_history = False, niter=12,
+                   optimizer = 'GD', stepsize = None):
+    #TODO
+
+    """
+    Cartesian kspace reconstruction.
+    tolerance is used to determine stop condition. It is to be tuned,
+    original setting was 0.01, however 0.001 seems to give a better
+    curve(R=2) Implementing CG according to
+    https://dl.acm.org/doi/pdf/10.1145/3180496.3180632
+    w is the sampling mask
+
+    Returns:
+        reconstruction, zero-filled recon, history(if keep_history = True)
+    """
+
+    model = CartesianModel()
+    model = model.to(device, dtype)
+
+    initial_recon = model.backward(kspace, coil_sensitivities)
+
+    #------------Radial specific------------
+
+    #print('initial_recon.shape', initial_recon.shape)
+    output = model.forward(initial_recon, coil_sensitivities)
+    target = kspace
+    scalar = (output*target).sum()/(output**2).sum()
+    x0 = (scalar.detach()*initial_recon).requires_grad_(True)
+    initial_recon = x0.cpu().detach().numpy().copy()
+
+    history = []
+
+    #------------optimization----------------
+    if stepsize is None:
+        stepsize = [0.5]*15+[0.05]*niter
+    if optimizer == 'GD':
+        x0 = model.backward(kspace, coil_sensitivities)
+        #print('x0.shape', x0.shape)
+        #print('w.shape', w.shape)
+        with torch.no_grad():
+            for i in range(niter):
+                output = model.forward(x0, coil_sensitivities) * w
+
+                #print('output.shape', output.shape)
+                residual = (output - kspace)
+                #print(i, 'Residual l2 norm ={:f}'.format(torch.norm(residual)))
+                x0 = x0 - stepsize[i] * model.backward(residual, coil_sensitivities)
+                history.append(x0.detach().cpu().numpy())
+    elif optimizer == 'CG5':
+        EH_b = model.backward(kspace, coil_sensitivities)
+        x0 = torch.zeros(EH_b.shape).to(device)
+        r = EH_b.detach().clone()
+        p = EH_b.detach().clone()
+        with torch.no_grad():
+            for i in range(niter):
+                rHr = torch.norm(r)**2
+                E_p = model.forward(p, coil_sensitivities) * w
+                q = model.backward(E_p, coil_sensitivities) # E^H E p
+
+                pHq = torch.sum(cpo.multiplication_conjugate(q, p, dim=1), dim =(0, 2, 3))
+                pHqconj = pHq.detach().clone()
+                pHqconj[1] = -pHqconj[1]
+                #print(pHq, pHqconj)
+                oneoverpHq = pHqconj/(torch.norm(pHq)**2)
+                #print('phq.shape', pHq.shape)
+                #print('oneoverpHp.shape', oneoverpHp.shape)
+                alpha = rHr * oneoverpHq
+                print(i, 'alpha: ', alpha)
+                alpha_repeat = torch.ones(x0.shape).to(device)
+                alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
+                alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
+                x0 = x0 + cpo.multiplication(alpha_repeat, p, dim=1)
+                r_new = r - cpo.multiplication(alpha_repeat, q, dim=1)
+                beta = (torch.norm(r_new)/torch.norm(r))**2
+                p = r_new + beta*p
+                r = r_new
+                history.append(x0.detach().cpu().numpy())
+    else:
+        print('optimizer is not defined:', optimizer)
+        print('Please only use CG5 or GD as input for optimizer')
+        raise NotImplementedError
+
+
+#    for i in range(niter):
+#        print('iteration ', i)
+#        loss = optimizer.step(criterion);
+#        print('loss= {}'.format(float(loss)))
+#        if keep_history:
+#            history.append(x0.cpu().detach().numpy().copy())
+#
+#        if abs(last_loss - loss) < stop_criterion:
+#            print('\tProgress is smaller than tolerance, stop optimization')
+#            break
+#        last_loss = loss
+
+    if keep_history:
+        return x0.cpu().detach(), initial_recon, history
+    else:
+        return x0.cpu().detach(), initial_recon
 
 class RadialModel(torch.nn.Module):
     def __init__(self, grid_size, im_size):#, device=device, dtype=dtype):
@@ -874,6 +1012,40 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 p = r_new + beta*p
                 r = r_new
                 history.append(x0.detach().cpu().numpy())
+    elif optimizer == 'iGRASP':
+        raise NotImplementedError
+        #the algorithm is the same as CG5, but the operators are different.
+        #From solving Ex = b to solve E'x = b'
+        #where E' = E^H E + \lambda R^H R, b' = E^H * b, R is the regularization.
+        b = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
+        x0 = torch.zeros(b.shape).to(device)
+        r = b.detach().clone() #-  #A c # TODO Mon Aug 23 19:48:58 EDT 2021
+        p = r.detach().clone()
+        with torch.no_grad():
+            for i in range(niter):
+                rHr = torch.norm(r)**2
+                E_p = model.forward(p, traj, coil_sensitivities, w)
+                q = model.adjoint(E_p, traj, coil_sensitivities, w) # E^H E p
+
+                pHq = torch.sum(cpo.multiplication_conjugate(q, p, dim=1), dim =(0, 2, 3))
+                pHqconj = pHq.detach().clone()
+                pHqconj[1] = -pHqconj[1]
+                #print(pHq, pHqconj)
+                oneoverpHq = pHqconj/(torch.norm(pHq)**2)
+                #print('phq.shape', pHq.shape)
+                #print('oneoverpHp.shape', oneoverpHp.shape)
+                alpha = rHr*oneoverpHq
+                print(i, 'alpha: ', alpha)
+                alpha_repeat = torch.ones(x0.shape).to(device)
+                alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
+                alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
+                x0 = x0 + cpo.multiplication(alpha_repeat, p, dim=1)
+                r_new = r - cpo.multiplication(alpha_repeat, q, dim=1)
+                beta = (torch.norm(r_new)/torch.norm(r))**2
+                p = r_new + beta*p
+                r = r_new
+                history.append(x0.detach().cpu().numpy())
+
     else:
         print('optimizer is not defined:', optimizer)
         print('Please only use CG2, CG5 or GD as input for optimizer')
