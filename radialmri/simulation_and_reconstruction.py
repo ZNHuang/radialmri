@@ -610,7 +610,7 @@ def CartesianSimulation(target, smap):
 def CartesianRecon(kspace, coil_sensitivities, w, tolerance = 0.001,
                    lambda1 = None, lambda2 = None, device=device,
                    dtype=dtype, keep_history = False, niter=12,
-                   optimizer = 'GD', stepsize = None):
+                   optimizer = 'GD', stepsize = None, verbose = True):
     #TODO
 
     """
@@ -676,7 +676,8 @@ def CartesianRecon(kspace, coil_sensitivities, w, tolerance = 0.001,
                 #print('phq.shape', pHq.shape)
                 #print('oneoverpHp.shape', oneoverpHp.shape)
                 alpha = rHr * oneoverpHq
-                print(i, 'alpha: ', alpha)
+                if verbose:
+                    print(i, 'alpha: ', alpha)
                 alpha_repeat = torch.ones(x0.shape).to(device)
                 alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
                 alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
@@ -894,7 +895,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                             grid_size, im_size,  tolerance = 0.001,
                             lambda1 = None, lambda2 = None, device=device,
                             dtype=dtype, keep_history = False, niter=12,
-                            optimizer = 'GD', stepsize = None):
+                            optimizer = 'GD', stepsize = None,
+                            verbose = True):
     """
     Radial kspace reconstruction.
     tolerance is used to determine stop condition. It is to be tuned,
@@ -955,7 +957,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
             for i in range(niter):
                 output = model.forward(x0, traj, coil_sensitivities, w)
                 residual = (output - kspace)
-                print(i, 'Residual l2 norm ={:f}'.format(torch.norm(residual)))
+                if verbose:
+                    print(i, 'Residual l2 norm ={:f}'.format(torch.norm(residual)))
                 #x0 = x0 - stepsize[i]*model.adjoint(residual*torch.sqrt(w), traj, coil_sensitivities, w)
                 x0 = x0 - stepsize[i]*model.adjoint(residual, traj, coil_sensitivities, w)
                 history.append(x0.detach().cpu().numpy())
@@ -982,7 +985,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 p = r + b*p
                 #real_residual = model.forward(x0, traj, coil_sensitivities, w)
                 #print(i, 'Real Residual l2 norm'.format())
-                print(i, 'Residual l2 norm ={:f}'.format(rr))
+                if verbose:
+                    print(i, 'Residual l2 norm ={:f}'.format(rr))
     elif optimizer == 'CG5':
         EH_b = model.adjoint(kspace*torch.sqrt(w), traj, coil_sensitivities, w)
         x0 = torch.zeros(EH_b.shape).to(device)
@@ -1002,7 +1006,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 #print('phq.shape', pHq.shape)
                 #print('oneoverpHp.shape', oneoverpHp.shape)
                 alpha = rHr*oneoverpHq
-                print(i, 'alpha: ', alpha)
+                if verbose:
+                    print(i, 'alpha: ', alpha)
                 alpha_repeat = torch.ones(x0.shape).to(device)
                 alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
                 alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
@@ -1035,7 +1040,8 @@ def RadialRecon_alternative(kspace, traj, coil_sensitivities, w,
                 #print('phq.shape', pHq.shape)
                 #print('oneoverpHp.shape', oneoverpHp.shape)
                 alpha = rHr*oneoverpHq
-                print(i, 'alpha: ', alpha)
+                if verbose:
+                    print(i, 'alpha: ', alpha)
                 alpha_repeat = torch.ones(x0.shape).to(device)
                 alpha_repeat[:, 0] = alpha_repeat[:, 0]*alpha[0]
                 alpha_repeat[:, 1] = alpha_repeat[:, 1]*alpha[1]
