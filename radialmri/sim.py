@@ -19,8 +19,8 @@ from simulation_and_reconstruction import *
 plt.rcParams.update({'figure.max_open_warning': 0})
 
 dtype = torch.float
-device = torch.device('cuda')
-#device = torch.device('cpu')
+#device = torch.device('cuda')
+device = torch.device('cpu')
 
 im_size = (320, 320)
 resolution = 320 #

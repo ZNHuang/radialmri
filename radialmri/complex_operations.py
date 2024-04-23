@@ -1,7 +1,7 @@
 import torch
 
-device = torch.device('cuda')
-#device = torch.device('cpu')
+#device = torch.device('cuda')
+device = torch.device('cpu')
 
 R = torch.tensor([0], device = device)
 I = torch.tensor([1], device = device)
