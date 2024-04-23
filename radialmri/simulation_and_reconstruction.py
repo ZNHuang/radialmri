@@ -18,8 +18,8 @@ import complex_operations as cpo
 #from utils import cg
 
 dtype = torch.float
-device = torch.device('cuda')
-#device = torch.device('cpu')
+#device = torch.device('cuda')
+device = torch.device('cpu')
 warnings.warn('Out of sync with the remove repository')
 
 def numpy2torch(x, device=torch.device('cpu')):
@@ -522,7 +522,8 @@ class CartesianModel(torch.nn.Module):
     reconstructed/original image
     """
     def __init__(self):
-        super(CartesianModel, self).__init__()
+        super()
+        #super(CartesianModel, self).__init__()
 
     def forward(self, x, coil_sensitivities):
         """FFT after applying coil sensitivities
@@ -533,11 +534,11 @@ class CartesianModel(torch.nn.Module):
             y: (ncoil, nt, x, y, 2)
         """
 
-        #cimage = torch.zeros(coil_sensitivities.shape, dtype=coil_sensitivities.dtype)
-        #for i in range(coil_sensitivities.shape[0]):
-        #    cimage[i] = cpo.multiplication(x.squeeze(), coil_sensitivities[i], dim=2)
+        cimage = torch.zeros(coil_sensitivities.shape, dtype=coil_sensitivities.dtype)
+        for i in range(coil_sensitivities.shape[0]):
+            cimage[i] = cpo.multiplication(x.squeeze(), coil_sensitivities[i], dim=1)
             #Mon Dec 13 17:48:17 EST 2021
-        cimage = cpo.multiplication(x.unsqueeze(1), coil_sensitivities, dim =2)
+        #cimage = cpo.multiplication(x.unsqueeze(1), coil_sensitivities, dim =2)
 
         #cimage = cimage.permute(0, 1, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (ncoil, nt, x, y, 2)
         cimage = cimage.permute(1, 0, 3, 4, 2) #from (ncoil, nt, 2, x, y) to (nt, ncoil, x, y, 2)
