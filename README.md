@@ -1,7 +1,7 @@
 # Radial MR <i>k</i>-space Simulation and Image Reconstruction
 
 This repository/package simulate radial kspace from a series of MR images. By 
-using GPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
+using GPU/CPU + pytorch + [torchkbnufft](https://github.com/mmuckley/torchkbnufft) we 
 are able to make the simulation and reconstruction faster, therefore suitable 
 for machine learning applications. You may also use the code just for 
 [iGRASP](https://pubmed.ncbi.nlm.nih.gov/24142845/)(momentarily unavailable) or [CG-SENSE](https://onlinelibrary.wiley.com/doi/10.1002/mrm.1241) reconstruction, Radial or Cartesian.
@@ -34,7 +34,7 @@ import torch
 torch.__version__
 ```
 
-To Install the package with a specific version: ```pip install 'PackageName==1.1.0'```
+To install the package with a specific version: ```pip install 'PackageName==1.1.0'```. You may try to use the requirement file by ```pip install -r requirements.txt```, however I don't find it bug-free since I saw some issue after generating the requirement.txt using ```pip freeze``` and use it on another computer. I would recommend pip install everything in a conda environment and be sure to use the torch and torchkbbufft version as specified
 
 If running into problem about environment set-up. Contact author for assistant. A Singularity container is set up for this by the author to run these scripts. The author will be happy to share that container if it helps.
 
@@ -46,11 +46,11 @@ Similar operation should be done to switch for [complex_operations.py](https://g
 
 ## Detailed Usage
 
-Please refer to the jupyter notebooks in the test folder. test.ipynb shows the basics and [Example_Crane.ipynb](/tests/Example-Crane.ipynb) shows the details. 
+Please refer to the jupyter notebooks in the example folder. test.ipynb shows the basics and [Example_Crane.ipynb](/tests/Example-Crane.ipynb) shows the details. 
 
 ## Testing Data
 
-Due to patient data involved, I'm not able to push realistic example as testing data to the repository. In the test/ directory, there is an example based on a short vedio for demonstration purpose. Unrealistic coil sensitivites and phase were used for simplicity. This example will show how the package works from simulation to reconstruction.
+Due to patient data involved, I'm not able to push realistic example as testing data to the repository. In the example/ directory, there is an example based on a short vedio for demonstration purpose. Unrealistic coil sensitivites and phase were used for simplicity. This example will show how the package works from simulation to reconstruction.
 
 
 ## Reference
