@@ -21,7 +21,6 @@ def multiplication(a, b, dim = 0):
         dim -- the complex dimension in a and b, where there the shape
         is 2
     """
-    print(a.shape, b.shape, dim)
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
 
