@@ -18,8 +18,8 @@ import complex_operations as cpo
 #from utils import cg
 
 dtype = torch.float
-device = torch.device('cuda')
-#device = torch.device('cpu')
+#device = torch.device('cuda')
+device = torch.device('cpu')
 warnings.warn('Out of sync with the remove repository')
 
 def numpy2torch(x, device=torch.device('cpu')):
